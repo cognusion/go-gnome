@@ -50,10 +50,14 @@ func (ts *TimeSignature) FromString(sig string) error {
 	beats, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return fmt.Errorf("signature is unparsable: %w", err)
+	} else if beats == 0 {
+		return fmt.Errorf("beats cannot be zero")
 	}
 	nv, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return fmt.Errorf("signature is unparsable: %w", err)
+	} else if nv == 0 {
+		return fmt.Errorf("note value cannot be zero")
 	}
 	// Post: everything parsed ok
 	ts.Beats.Store(cast.ToInt32(beats))

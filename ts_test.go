@@ -35,13 +35,17 @@ func Test_TimeSignature(t *testing.T) {
 		So(ts.NoteValue.Load(), ShouldBeZeroValue)
 		So(ts.Tempo.Load(), ShouldBeZeroValue)
 		Convey("And when bad signatures are provided, they fail properly and do not update the values", func() {
-			err := ts.FromString("68")
+			err := ts.FromString("0/4") // zero not allowed for beats
 			So(err, ShouldNotBeNil)
-			err = ts.FromString("4/four")
+			err = ts.FromString("4/0") // zero not allowed for note value
 			So(err, ShouldNotBeNil)
-			err = ts.FromString("six/four")
+			err = ts.FromString("68") // missing separator
 			So(err, ShouldNotBeNil)
-			err = ts.FromString("4/6/8")
+			err = ts.FromString("4/four") // text
+			So(err, ShouldNotBeNil)
+			err = ts.FromString("six/four") // so much text
+			So(err, ShouldNotBeNil)
+			err = ts.FromString("4/6/8") // too many separators
 			So(err, ShouldNotBeNil)
 
 			So(ts.Beats.Load(), ShouldBeZeroValue)
