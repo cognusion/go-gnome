@@ -1,4 +1,4 @@
-module gnome
+module github.com/cognusion/go-gnome
 
 go 1.25.0
 
