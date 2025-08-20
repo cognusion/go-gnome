@@ -142,7 +142,10 @@ func (g *Gnome) Close() {
 
 // Pause toggles whether the 'gnome is paused.
 func (g *Gnome) Pause() {
-	g.pauseChan <- true
+	if g.running.Load() {
+		g.pauseChan <- true
+	}
+	// else we would wedge
 }
 
 // Change sets a new tempo.
