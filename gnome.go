@@ -8,7 +8,7 @@
 //
 // Gnome was built from scratch expecting WASM as the target platform. Some decisions that may seem odd
 // were made because of that. Most odd decisions are simply. The consuming app was written for my
-// brother-in-law's music students: [MetroGnome](https://github.com/cognusion/metrognome)
+// brother-in-law's music students: [MetroGnome](https://github.com/cognusion/metrognome).
 package gnome
 
 import (
@@ -148,6 +148,7 @@ func (g *Gnome) Stop() {
 // Close terminally cleans up all the things.
 func (g *Gnome) Close() {
 	g.player.Close()
+	speaker.Close()
 
 }
 

@@ -4,10 +4,50 @@ import (
 	"crypto/rand"
 	_ "embed"
 	"testing"
+	"time"
 
 	"github.com/fortytw2/leaktest"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func Test_NewGnomeBufferTick(t *testing.T) {
+	// beep leaks a goro from ebitengine: https://github.com/gopxl/beep/issues/107
+	//defer leaktest.Check(t)()
+
+	Convey("When...", t, func(c C) {
+		var i int64
+
+		tf := func(tick int) {
+			i++
+			c.So(tick, ShouldNotBeZeroValue)
+		}
+		buff, err := FileToBuffer("metronome1.wav")
+		So(buff, ShouldNotBeNil)
+		So(err, ShouldBeNil)
+
+		g, e := NewGnomeBufferTick(buff, 240, tf)
+		So(e, ShouldBeNil)
+		So(g, ShouldNotBeNil)
+		defer g.Close()
+
+		g.Mute() // let's not metronome during a test
+		g.Start()
+		<-time.After(time.Second)
+		So(g.IsRunning(), ShouldBeTrue)
+		So(g.Restart(), ShouldBeError)
+
+		g.Pause() // Pause
+		oldi := i // cache i
+		<-time.After(time.Second)
+		So(i, ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
+		g.Pause()                                   // resume
+		g.Stop()
+
+		So(g.IsRunning(), ShouldBeFalse)
+		So(i, ShouldBeBetweenOrEqual, 2, 5)
+
+	})
+}
 
 func Test_BufferToStreamer(t *testing.T) {
 	defer leaktest.Check(t)()
