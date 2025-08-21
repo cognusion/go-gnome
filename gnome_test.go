@@ -14,7 +14,7 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 	// beep leaks a goro from ebitengine: https://github.com/gopxl/beep/issues/107
 	//defer leaktest.Check(t)()
 
-	Convey("When...", t, func(c C) {
+	Convey("When a Buffer from FileToBuffer on a known-good wav file is passed to NewGnomeBufferTick, everything works as expected.", t, func(c C) {
 		var i int64
 
 		tf := func(tick int) {
@@ -39,12 +39,12 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 		g.Pause() // Pause
 		oldi := i // cache i
 		<-time.After(time.Second)
-		So(i, ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
-		g.Pause()                                   // resume
+		SoMsg("Too many post-Pause ticks!", i, ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
+		g.Pause()                                                                    // resume
 		g.Stop()
 
 		So(g.IsRunning(), ShouldBeFalse)
-		So(i, ShouldBeBetweenOrEqual, 2, 5)
+		SoMsg("Too many total ticks, given pauses and tempo!", i, ShouldBeBetweenOrEqual, 2, 5)
 
 	})
 }
