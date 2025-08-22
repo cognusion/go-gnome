@@ -3,6 +3,7 @@ package gnome
 import (
 	"crypto/rand"
 	_ "embed"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,10 +16,10 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 	//defer leaktest.Check(t)()
 
 	Convey("When a Buffer from FileToBuffer on a known-good wav file is passed to NewGnomeBufferTick, everything works as expected.", t, func(c C) {
-		var i int64
+		var i atomic.Int64
 
 		tf := func(tick int) {
-			i++
+			i.Add(1)
 			c.So(tick, ShouldNotBeZeroValue)
 		}
 		buff, err := FileToBuffer("metronome1.wav")
@@ -36,15 +37,15 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 		So(g.IsRunning(), ShouldBeTrue)
 		So(g.Restart(), ShouldBeError)
 
-		g.Pause() // Pause
-		oldi := i // cache i
+		g.Pause()        // Pause
+		oldi := i.Load() // cache i
 		<-time.After(time.Second)
-		SoMsg("Too many post-Pause ticks!", i, ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
-		g.Pause()                                                                    // resume
+		SoMsg("Too many post-Pause ticks!", i.Load(), ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
+		g.Pause()                                                                           // resume
 		g.Stop()
 
 		So(g.IsRunning(), ShouldBeFalse)
-		SoMsg("Too many total ticks, given pauses and tempo!", i, ShouldBeBetweenOrEqual, 2, 5)
+		SoMsg("Too many total ticks, given pauses and tempo!", i.Load(), ShouldBeBetweenOrEqual, 2, 5)
 
 	})
 }
