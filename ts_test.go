@@ -9,12 +9,12 @@ import (
 
 func Test_TimeSignature(t *testing.T) {
 
-	Convey("When a zero-value TimeSignature is created, the values are zero-value too", t, func() {
-		ts := TimeSignature{}
-		So(ts.Beats.Load(), ShouldBeZeroValue)
-		So(ts.NoteValue.Load(), ShouldBeZeroValue)
-		So(ts.Tempo.Load(), ShouldBeZeroValue)
-		So(ts.TempoToDuration(), ShouldEqual, 0)
+	Convey("When a NewTimeSignature is created, the values are correct", t, func() {
+		ts := NewTimeSignature(11, 2, 240)
+		So(ts.Beats.Load(), ShouldEqual, 11)
+		So(ts.NoteValue.Load(), ShouldEqual, 2)
+		So(ts.Tempo.Load(), ShouldEqual, 240)
+		So(ts.TempoToDuration(), ShouldEqual, 250*time.Millisecond)
 		Convey("And when a signature is provided, it is parsed properly and the values reflect them", func() {
 			err := ts.FromString("6/8")
 			So(err, ShouldBeNil)
@@ -34,6 +34,7 @@ func Test_TimeSignature(t *testing.T) {
 		So(ts.Beats.Load(), ShouldBeZeroValue)
 		So(ts.NoteValue.Load(), ShouldBeZeroValue)
 		So(ts.Tempo.Load(), ShouldBeZeroValue)
+		So(ts.TempoToDuration(), ShouldEqual, 0)
 		Convey("And when bad signatures are provided, they fail properly and do not update the values", func() {
 			err := ts.FromString("0/4") // zero not allowed for beats
 			So(err, ShouldNotBeNil)

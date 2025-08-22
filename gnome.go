@@ -1,10 +1,11 @@
 // Package gnome is a library for building a nearly-realtime metro...gnomes. Get it? GET IT?!
 // One would think there would already be such a thing, but given the complexities involved in getting
-// decent timing, there was not.
+// decent timing, there was not. Supports WAV, MP3, FLAC, and Vorbis as passthoughs from `gopxl/beep`
+// (which stands on the shoulders of other giants).
 //
-// This is not perfect, either. If the system is very busy, the rhythm
-// will not be smooth. If the tempo is exceptionally high, the rhythm will not be smooth. On a normal
-// system, doing nothing else, BPMs under 180 are almost always great.
+// This is not perfect, either. If the system is very busy, the rhythm will not be smooth.
+// If the tempo is exceptionally high, the rhythm will not be smooth.
+// On a normal system, doing nothing else, BPMs under 180 are almost always great.
 //
 // Gnome was built from scratch expecting WASM as the target platform. Some decisions that may seem odd
 // were made because of that. Most odd decisions are simply. The consuming app was written for my
@@ -22,6 +23,7 @@ import (
 
 	"github.com/cognusion/go-recyclable"
 	"github.com/gopxl/beep/v2"
+	"github.com/gopxl/beep/v2/flac"
 	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/speaker"
 	"github.com/gopxl/beep/v2/vorbis"
@@ -58,19 +60,27 @@ type Gnome struct {
 }
 
 // NewGnomeBufferTick takes an GnomeBuffer, tempo, and a tickFunc to call when the 'gnome fires.
+//
+// Deprecated: Migrate to NewGnomeFromBuffer
 func NewGnomeBufferTick(buff Buffer, tempo int32, tickFunc func(int)) (*Gnome, error) {
-	g, err := NewGnomeBuffer(buff, tempo)
-	if err != nil {
-		return nil, err
-	}
-	// Add the tickFunc
-	g.tickFunc = tickFunc
-
-	return g, nil
+	return NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, tempo), tickFunc)
 }
 
 // NewGnomeBuffer takes an GnomeBuffer and a tempo.
+//
+// Deprecated: Migrate to NewGnomeFromBuffer
 func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error) {
+	return NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, tempo), nil)
+}
+
+// NewGnomeFromBuffer takes a Buffer, a TimeSignature and an optional tickFunc to call when
+// the 'gnome fires, and gives you a Gnome or an error. :)
+func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc func(int)) (*Gnome, error) {
+	// Require a ts
+	if ts == nil {
+		return nil, fmt.Errorf("a valid TimeSignature is required")
+	}
+
 	// Check the buffer and open a streamer.
 	streamer, format, err := BufferToStreamer(buff)
 	if err != nil {
@@ -80,17 +90,13 @@ func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error) {
 	// Prime the speaker
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 
-	// Set the TS
-	ts := &TimeSignature{}
-	ts.FromString("4/4")
-	ts.Tempo.Store(int32(tempo))
-
 	ctx, cancel := context.WithCancel(context.Background())
 	g := &Gnome{
 		player:     streamer,
 		pauseChan:  make(chan bool, 1),
 		TS:         ts,
 		ctx:        ctx,
+		tickFunc:   tickFunc,
 		cancelFunc: cancel,
 	}
 	g.interval.Store(ts.TempoToDuration())
@@ -99,24 +105,28 @@ func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error) {
 }
 
 // NewGnomeWithTickFunc takes a file string, tempo, and a tickFunc to call when the 'gnome fires.
+//
+// Deprecated: Migrate to NewGnomeFromFile
 func NewGnomeWithTickFunc(soundFile string, tempo int32, tickFunc func(int)) (*Gnome, error) {
-	g, e := NewGnome(soundFile, tempo)
-	if e != nil {
-		return nil, e
-	}
-	g.tickFunc = tickFunc
-
-	return g, nil
+	return NewGnomeFromFile(soundFile, NewTimeSignature(4, 4, tempo), tickFunc)
 }
 
 // NewGnome loads a WAV or MP3, and plays it every interval, returning an error if there is a problem
 // loading the file.
+//
+// Deprecated: Migrate to NewGnomeFromFile
 func NewGnome(soundFile string, tempo int32) (*Gnome, error) {
+	return NewGnomeFromFile(soundFile, NewTimeSignature(4, 4, tempo), nil)
+}
+
+// NewGnomeFromFile takes a filename, a TimeSignature and an optional tickFunc to call when
+// the 'gnome fires, and gives you a Gnome or an error. :)
+func NewGnomeFromFile(soundFile string, ts *TimeSignature, tickFunc func(int)) (*Gnome, error) {
 	buff, err := FileToBuffer(soundFile)
 	if err != nil {
 		return nil, err
 	}
-	return NewGnomeBuffer(buff, tempo)
+	return NewGnomeFromBuffer(buff, ts, tickFunc)
 }
 
 // Restart will re-initialize some stopped components so the 'gnome can carry on.
@@ -295,11 +305,14 @@ func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error) {
 		// WAV
 		streamer, format, err = wav.Decode(buff)
 	case "audio/mpeg":
-		// MP3 we hope
+		// MP3
 		streamer, format, err = mp3.Decode(buff)
 	case "audio/vorbis":
-		// Vorbis we hope
+		// Vorbis
 		streamer, format, err = vorbis.Decode(buff)
+	case "audio/x-flac":
+		// FLAC
+		streamer, format, err = flac.Decode(buff)
 	default:
 		err = fmt.Errorf("buffer does not contain a supported format: %s (MIME: %s)", kind.Extension, kind.MIME.Value)
 	}

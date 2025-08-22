@@ -26,7 +26,7 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 		So(buff, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 
-		g, e := NewGnomeBufferTick(buff, 240, tf)
+		g, e := NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, 240), tf)
 		So(e, ShouldBeNil)
 		So(g, ShouldNotBeNil)
 		defer g.Close()

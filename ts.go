@@ -18,6 +18,15 @@ type TimeSignature struct {
 	Tempo     atomic.Int32
 }
 
+// NewTimeSignature returns an initialized TimeSignature.
+func NewTimeSignature(beats, noteValue, tempo int32) *TimeSignature {
+	ts := TimeSignature{}
+	ts.Beats.Store(beats)
+	ts.NoteValue.Store(noteValue)
+	ts.Tempo.Store(tempo)
+	return &ts
+}
+
 // TempoToDuration returns the tempo as a time.Duration.
 func (ts *TimeSignature) TempoToDuration() time.Duration {
 	if ts.Tempo.Load() <= 0 {
