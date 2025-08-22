@@ -22,7 +22,7 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 			i.Add(1)
 			c.So(tick, ShouldNotBeZeroValue)
 		}
-		buff, err := FileToBuffer("metronome1.wav")
+		buff, err := FileToBuffer("testfiles/metronome1.wav")
 		So(buff, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 
@@ -54,7 +54,7 @@ func Test_BufferToStreamer(t *testing.T) {
 	defer leaktest.Check(t)()
 
 	Convey("When FileToBuffer is called on a known WAV file", t, func() {
-		b, err := FileToBuffer("metronome1.wav")
+		b, err := FileToBuffer("testfiles/metronome1.wav")
 		So(b, ShouldNotBeNil)
 		So(err, ShouldBeNil)
 
