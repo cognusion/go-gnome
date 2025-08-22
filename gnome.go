@@ -306,8 +306,8 @@ func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error) {
 	case "audio/mpeg":
 		// MP3
 		streamer, format, err = mp3.Decode(buff)
-	case "audio/vorbis":
-		// Vorbis
+	case "audio/ogg":
+		// Ogg Vorbis
 		streamer, format, err = vorbis.Decode(buff)
 	default:
 		err = fmt.Errorf("buffer does not contain a supported format: %s (MIME: %s)", kind.Extension, kind.MIME.Value)

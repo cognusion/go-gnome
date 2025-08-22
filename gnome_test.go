@@ -55,15 +55,43 @@ func Test_BufferToStreamer(t *testing.T) {
 
 	Convey("When FileToBuffer is called on a known WAV file", t, func() {
 		b, err := FileToBuffer("testfiles/metronome1.wav")
-		So(b, ShouldNotBeNil)
 		So(err, ShouldBeNil)
+		So(b, ShouldNotBeNil)
 
 		Convey("and that Buffer of known-good WAV data is sent to BufferToStreamer, everything works as expected.", func() {
 			s, f, e := BufferToStreamer(b)
+			So(e, ShouldBeNil)
 			So(s, ShouldNotBeNil)
 			So(s, ShouldNotBeZeroValue)
 			So(f, ShouldNotBeZeroValue)
+		})
+	})
+
+	Convey("When FileToBuffer is called on a known MP3 file", t, func() {
+		b, err := FileToBuffer("testfiles/metronome1.mp3")
+		So(err, ShouldBeNil)
+		So(b, ShouldNotBeNil)
+
+		Convey("and that Buffer of known-good MP3 data is sent to BufferToStreamer, everything works as expected.", func() {
+			s, f, e := BufferToStreamer(b)
 			So(e, ShouldBeNil)
+			So(s, ShouldNotBeNil)
+			So(s, ShouldNotBeZeroValue)
+			So(f, ShouldNotBeZeroValue)
+		})
+	})
+
+	Convey("When FileToBuffer is called on a known OGG file", t, func() {
+		b, err := FileToBuffer("testfiles/metronome1.ogg")
+		So(err, ShouldBeNil)
+		So(b, ShouldNotBeNil)
+
+		Convey("and that Buffer of known-good OGG data is sent to BufferToStreamer, everything works as expected.", func() {
+			s, f, e := BufferToStreamer(b)
+			So(e, ShouldBeNil)
+			So(s, ShouldNotBeNil)
+			So(s, ShouldNotBeZeroValue)
+			So(f, ShouldNotBeZeroValue)
 		})
 	})
 
