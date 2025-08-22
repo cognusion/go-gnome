@@ -17,7 +17,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -25,7 +24,9 @@ import (
 	"github.com/gopxl/beep/v2"
 	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/speaker"
+	"github.com/gopxl/beep/v2/vorbis"
 	"github.com/gopxl/beep/v2/wav"
+	"github.com/h2non/filetype"
 	uatomic "go.uber.org/atomic"
 )
 
@@ -37,6 +38,9 @@ var (
 	// RPool is a recyclable.BufferPool
 	RPool = recyclable.NewBufferPool()
 )
+
+// Buffer is our local interface to encapsulate all the interfaces
+type Buffer = io.ReadSeekCloser
 
 // Gnome is a metro...gnome. Get it? Get it?!
 type Gnome struct {
@@ -53,8 +57,8 @@ type Gnome struct {
 	tickFunc   func(int)
 }
 
-// NewGnomeBufferTick takes an io.ReadSeekCloser, tempo, and a tickFunc to call when the 'gnome fires.
-func NewGnomeBufferTick(buff io.ReadSeekCloser, tempo int32, tickFunc func(int)) (*Gnome, error) {
+// NewGnomeBufferTick takes an GnomeBuffer, tempo, and a tickFunc to call when the 'gnome fires.
+func NewGnomeBufferTick(buff Buffer, tempo int32, tickFunc func(int)) (*Gnome, error) {
 	g, err := NewGnomeBuffer(buff, tempo)
 	if err != nil {
 		return nil, err
@@ -65,8 +69,8 @@ func NewGnomeBufferTick(buff io.ReadSeekCloser, tempo int32, tickFunc func(int))
 	return g, nil
 }
 
-// NewGnomeBuffer takes an io.ReadSeekCloser and a tempo.
-func NewGnomeBuffer(buff io.ReadSeekCloser, tempo int32) (*Gnome, error) {
+// NewGnomeBuffer takes an GnomeBuffer and a tempo.
+func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error) {
 	// Check the buffer and open a streamer.
 	streamer, format, err := BufferToStreamer(buff)
 	if err != nil {
@@ -267,27 +271,37 @@ func FileToBuffer(filename string) (*recyclable.Buffer, error) {
 
 // BufferToStreamer checks the first 12 bytes of the Buffer to see if it's a WAV,
 // and tries to decode it as that or an MP3. Errors are returned if anything fails.
-func BufferToStreamer(buff io.ReadSeekCloser) (beep.StreamSeekCloser, beep.Format, error) {
+func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error) {
 	var (
-		b        = make([]byte, 12)
-		n        int
 		err      error
 		streamer beep.StreamSeekCloser
 		format   beep.Format
 	)
 
-	// determine type of byte data
-	n, err = buff.Read(b)
-	buff.Seek(0, 0) //reset the seek pointer
+	// We only have to pass the file header = first 261 bytes
+	head := make([]byte, 261)
+	_, err = buff.Read(head)
+	buff.Seek(0, 0) // reset
+	if err != nil {
+		return streamer, format, err
+	}
 
-	if err != nil || n != 12 {
-		err = fmt.Errorf("reading first 12 (%d) of the buffer failed: %w", n, err)
-	} else if strings.Contains(string(b), "RIFF") && strings.Contains(string(b), "WAVE") {
+	kind, err := filetype.Match(head)
+	if err != nil {
+		return streamer, format, err
+	}
+	switch kind.MIME.Value {
+	case "audio/x-wav":
 		// WAV
 		streamer, format, err = wav.Decode(buff)
-	} else {
+	case "audio/mpeg":
 		// MP3 we hope
 		streamer, format, err = mp3.Decode(buff)
+	case "audio/vorbis":
+		// Vorbis we hope
+		streamer, format, err = vorbis.Decode(buff)
+	default:
+		err = fmt.Errorf("buffer does not contain a supported format: %s (MIME: %s)", kind.Extension, kind.MIME.Value)
 	}
 
 	return streamer, format, err

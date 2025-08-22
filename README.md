@@ -24,14 +24,15 @@ brother-in-law's music students: [MetroGnome](<a href="https://github.com/cognus
 
 ## <a name="pkg-index">Index</a>
 * [Variables](#pkg-variables)
-* [func BufferToStreamer(buff io.ReadSeekCloser) (beep.StreamSeekCloser, beep.Format, error)](#BufferToStreamer)
+* [func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error)](#BufferToStreamer)
 * [func FileToBuffer(filename string) (*recyclable.Buffer, error)](#FileToBuffer)
 * [func FromBPM(bpm int32) time.Duration](#FromBPM)
 * [func ToBPM(interval time.Duration) int32](#ToBPM)
+* [type Buffer](#Buffer)
 * [type Gnome](#Gnome)
   * [func NewGnome(soundFile string, tempo int32) (*Gnome, error)](#NewGnome)
-  * [func NewGnomeBuffer(buff io.ReadSeekCloser, tempo int32) (*Gnome, error)](#NewGnomeBuffer)
-  * [func NewGnomeBufferTick(buff io.ReadSeekCloser, tempo int32, tickFunc func(int)) (*Gnome, error)](#NewGnomeBufferTick)
+  * [func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error)](#NewGnomeBuffer)
+  * [func NewGnomeBufferTick(buff Buffer, tempo int32, tickFunc func(int)) (*Gnome, error)](#NewGnomeBufferTick)
   * [func NewGnomeWithTickFunc(soundFile string, tempo int32, tickFunc func(int)) (*Gnome, error)](#NewGnomeWithTickFunc)
   * [func (g *Gnome) Change(tempo int32)](#Gnome.Change)
   * [func (g *Gnome) Close()](#Gnome.Close)
@@ -63,16 +64,16 @@ var (
 ```
 
 
-## <a name="BufferToStreamer">func</a> [BufferToStreamer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6829:6918#L270)
+## <a name="BufferToStreamer">func</a> [BufferToStreamer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6948:7026#L274)
 ``` go
-func BufferToStreamer(buff io.ReadSeekCloser) (beep.StreamSeekCloser, beep.Format, error)
+func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error)
 ```
 BufferToStreamer checks the first 12 bytes of the Buffer to see if it's a WAV,
 and tries to decode it as that or an MP3. Errors are returned if anything fails.
 
 
 
-## <a name="FileToBuffer">func</a> [FileToBuffer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6401:6463#L256)
+## <a name="FileToBuffer">func</a> [FileToBuffer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6520:6582#L260)
 ``` go
 func FileToBuffer(filename string) (*recyclable.Buffer, error)
 ```
@@ -80,7 +81,7 @@ FileToBuffer opens and reads the filename into a Buffer, returning it or an erro
 
 
 
-## <a name="FromBPM">func</a> [FromBPM](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=5855:5892#L237)
+## <a name="FromBPM">func</a> [FromBPM](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=5974:6011#L241)
 ``` go
 func FromBPM(bpm int32) time.Duration
 ```
@@ -88,7 +89,7 @@ FromBPM converts a beats-per-minute tempo to a Microsecond-precise time.Duration
 
 
 
-## <a name="ToBPM">func</a> [ToBPM](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6116:6156#L247)
+## <a name="ToBPM">func</a> [ToBPM](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=6235:6275#L251)
 ``` go
 func ToBPM(interval time.Duration) int32
 ```
@@ -97,7 +98,22 @@ ToBPM converts a Microsecond-precise time.Duration to a beats-per-minute tempo.
 
 
 
-## <a name="Gnome">type</a> [Gnome](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1234:1550#L42)
+## <a name="Buffer">type</a> [Buffer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1308:1339#L43)
+``` go
+type Buffer = io.ReadSeekCloser
+```
+Buffer is our local interface to encapsulate all the interfaces
+
+
+
+
+
+
+
+
+
+
+## <a name="Gnome">type</a> [Gnome](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1387:1703#L46)
 ``` go
 type Gnome struct {
     // TS tracks and reports the time signature information for the 'gnome.
@@ -114,7 +130,7 @@ Gnome is a metro...gnome. Get it? Get it?!
 
 
 
-### <a name="NewGnome">func</a> [NewGnome](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3060:3120#L110)
+### <a name="NewGnome">func</a> [NewGnome](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3179:3239#L114)
 ``` go
 func NewGnome(soundFile string, tempo int32) (*Gnome, error)
 ```
@@ -122,21 +138,21 @@ NewGnome loads a WAV or MP3, and plays it every interval, returning an error if 
 loading the file.
 
 
-### <a name="NewGnomeBuffer">func</a> [NewGnomeBuffer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1952:2024#L69)
+### <a name="NewGnomeBuffer">func</a> [NewGnomeBuffer](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=2082:2143#L73)
 ``` go
-func NewGnomeBuffer(buff io.ReadSeekCloser, tempo int32) (*Gnome, error)
+func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error)
 ```
-NewGnomeBuffer takes an io.ReadSeekCloser and a tempo.
+NewGnomeBuffer takes an GnomeBuffer and a tempo.
 
 
-### <a name="NewGnomeBufferTick">func</a> [NewGnomeBufferTick](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1655:1751#L57)
+### <a name="NewGnomeBufferTick">func</a> [NewGnomeBufferTick](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=1802:1887#L61)
 ``` go
-func NewGnomeBufferTick(buff io.ReadSeekCloser, tempo int32, tickFunc func(int)) (*Gnome, error)
+func NewGnomeBufferTick(buff Buffer, tempo int32, tickFunc func(int)) (*Gnome, error)
 ```
-NewGnomeBufferTick takes an io.ReadSeekCloser, tempo, and a tickFunc to call when the 'gnome fires.
+NewGnomeBufferTick takes an GnomeBuffer, tempo, and a tickFunc to call when the 'gnome fires.
 
 
-### <a name="NewGnomeWithTickFunc">func</a> [NewGnomeWithTickFunc](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=2730:2822#L98)
+### <a name="NewGnomeWithTickFunc">func</a> [NewGnomeWithTickFunc](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=2849:2941#L102)
 ``` go
 func NewGnomeWithTickFunc(soundFile string, tempo int32, tickFunc func(int)) (*Gnome, error)
 ```
@@ -146,7 +162,7 @@ NewGnomeWithTickFunc takes a file string, tempo, and a tickFunc to call when the
 
 
 
-### <a name="Gnome.Change">func</a> (\*Gnome) [Change](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4264:4299#L164)
+### <a name="Gnome.Change">func</a> (\*Gnome) [Change](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4383:4418#L168)
 ``` go
 func (g *Gnome) Change(tempo int32)
 ```
@@ -155,7 +171,7 @@ Change sets a new tempo.
 
 
 
-### <a name="Gnome.Close">func</a> (\*Gnome) [Close](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4023:4046#L149)
+### <a name="Gnome.Close">func</a> (\*Gnome) [Close](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4142:4165#L153)
 ``` go
 func (g *Gnome) Close()
 ```
@@ -164,7 +180,7 @@ Close terminally cleans up all the things.
 
 
 
-### <a name="Gnome.IsRunning">func</a> (\*Gnome) [IsRunning](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4406:4438#L171)
+### <a name="Gnome.IsRunning">func</a> (\*Gnome) [IsRunning](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4525:4557#L175)
 ``` go
 func (g *Gnome) IsRunning() bool
 ```
@@ -173,7 +189,7 @@ IsRunning returns if the 'gnome is running.
 
 
 
-### <a name="Gnome.Mute">func</a> (\*Gnome) [Mute](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3817:3839#L138)
+### <a name="Gnome.Mute">func</a> (\*Gnome) [Mute](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3936:3958#L142)
 ``` go
 func (g *Gnome) Mute()
 ```
@@ -182,7 +198,7 @@ Mute toggles whether or not audio will play.
 
 
 
-### <a name="Gnome.Pause">func</a> (\*Gnome) [Pause](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4135:4158#L156)
+### <a name="Gnome.Pause">func</a> (\*Gnome) [Pause](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4254:4277#L160)
 ``` go
 func (g *Gnome) Pause()
 ```
@@ -191,7 +207,7 @@ Pause toggles whether the 'gnome is paused.
 
 
 
-### <a name="Gnome.Restart">func</a> (\*Gnome) [Restart](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3320:3351#L119)
+### <a name="Gnome.Restart">func</a> (\*Gnome) [Restart](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3439:3470#L123)
 ``` go
 func (g *Gnome) Restart() error
 ```
@@ -200,7 +216,7 @@ Restart will re-initialize some stopped components so the 'gnome can carry on.
 
 
 
-### <a name="Gnome.Start">func</a> (\*Gnome) [Start](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3653:3676#L131)
+### <a name="Gnome.Start">func</a> (\*Gnome) [Start](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3772:3795#L135)
 ``` go
 func (g *Gnome) Start()
 ```
@@ -209,7 +225,7 @@ Start -s the Gnome. Only works the first time you call it.
 
 
 
-### <a name="Gnome.Stop">func</a> (\*Gnome) [Stop](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=3909:3931#L143)
+### <a name="Gnome.Stop">func</a> (\*Gnome) [Stop](https://github.com/cognusion/go-gnome/tree/master/gnome.go?s=4028:4050#L147)
 ``` go
 func (g *Gnome) Stop()
 ```
