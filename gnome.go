@@ -1,6 +1,6 @@
 // Package gnome is a library for building a nearly-realtime metro...gnomes. Get it? GET IT?!
 // One would think there would already be such a thing, but given the complexities involved in getting
-// decent timing, there was not. Supports WAV, MP3, FLAC, and Vorbis as passthoughs from `gopxl/beep`
+// decent timing, there was not. Supports WAV, MP3, and Vorbis as passthoughs from `gopxl/beep`
 // (which stands on the shoulders of other giants).
 //
 // This is not perfect, either. If the system is very busy, the rhythm will not be smooth.
@@ -23,7 +23,6 @@ import (
 
 	"github.com/cognusion/go-recyclable"
 	"github.com/gopxl/beep/v2"
-	"github.com/gopxl/beep/v2/flac"
 	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/speaker"
 	"github.com/gopxl/beep/v2/vorbis"
@@ -310,9 +309,6 @@ func BufferToStreamer(buff Buffer) (beep.StreamSeekCloser, beep.Format, error) {
 	case "audio/vorbis":
 		// Vorbis
 		streamer, format, err = vorbis.Decode(buff)
-	case "audio/x-flac":
-		// FLAC
-		streamer, format, err = flac.Decode(buff)
 	default:
 		err = fmt.Errorf("buffer does not contain a supported format: %s (MIME: %s)", kind.Extension, kind.MIME.Value)
 	}
