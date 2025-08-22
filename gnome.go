@@ -1,6 +1,6 @@
 // Package gnome is a library for building a nearly-realtime metro...gnomes. Get it? GET IT?!
 // One would think there would already be such a thing, but given the complexities involved in getting
-// decent timing, there was not. Supports WAV, MP3, and Vorbis as passthoughs from `gopxl/beep`
+// decent timing, there was not. Supports WAV, MP3, and Ogg Vorbis as passthoughs from `gopxl/beep`
 // (which stands on the shoulders of other giants).
 //
 // This is not perfect, either. If the system is very busy, the rhythm will not be smooth.
@@ -58,20 +58,6 @@ type Gnome struct {
 	tickFunc   func(int)
 }
 
-// NewGnomeBufferTick takes an GnomeBuffer, tempo, and a tickFunc to call when the 'gnome fires.
-//
-// Deprecated: Migrate to NewGnomeFromBuffer
-func NewGnomeBufferTick(buff Buffer, tempo int32, tickFunc func(int)) (*Gnome, error) {
-	return NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, tempo), tickFunc)
-}
-
-// NewGnomeBuffer takes an GnomeBuffer and a tempo.
-//
-// Deprecated: Migrate to NewGnomeFromBuffer
-func NewGnomeBuffer(buff Buffer, tempo int32) (*Gnome, error) {
-	return NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, tempo), nil)
-}
-
 // NewGnomeFromBuffer takes a Buffer, a TimeSignature and an optional tickFunc to call when
 // the 'gnome fires, and gives you a Gnome or an error. :)
 func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc func(int)) (*Gnome, error) {
@@ -101,21 +87,6 @@ func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc func(int)) (*Gn
 	g.interval.Store(ts.TempoToDuration())
 
 	return g, nil
-}
-
-// NewGnomeWithTickFunc takes a file string, tempo, and a tickFunc to call when the 'gnome fires.
-//
-// Deprecated: Migrate to NewGnomeFromFile
-func NewGnomeWithTickFunc(soundFile string, tempo int32, tickFunc func(int)) (*Gnome, error) {
-	return NewGnomeFromFile(soundFile, NewTimeSignature(4, 4, tempo), tickFunc)
-}
-
-// NewGnome loads a WAV or MP3, and plays it every interval, returning an error if there is a problem
-// loading the file.
-//
-// Deprecated: Migrate to NewGnomeFromFile
-func NewGnome(soundFile string, tempo int32) (*Gnome, error) {
-	return NewGnomeFromFile(soundFile, NewTimeSignature(4, 4, tempo), nil)
 }
 
 // NewGnomeFromFile takes a filename, a TimeSignature and an optional tickFunc to call when

@@ -22,11 +22,8 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 			i.Add(1)
 			c.So(tick, ShouldNotBeZeroValue)
 		}
-		buff, err := FileToBuffer("testfiles/metronome1.wav")
-		So(buff, ShouldNotBeNil)
-		So(err, ShouldBeNil)
 
-		g, e := NewGnomeFromBuffer(buff, NewTimeSignature(4, 4, 240), tf)
+		g, e := NewGnomeFromFile("testfiles/metronome1.wav", NewTimeSignature(4, 4, 240), tf)
 		So(e, ShouldBeNil)
 		So(g, ShouldNotBeNil)
 		defer g.Close()
