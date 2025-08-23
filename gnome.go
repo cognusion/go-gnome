@@ -53,6 +53,7 @@ type Gnome struct {
 	ctx        context.Context
 	cancelFunc func()
 	pauseChan  chan bool
+	paused     atomic.Bool
 	mute       atomic.Bool
 	running    atomic.Bool
 	tickFunc   func(int)
@@ -126,6 +127,7 @@ func (g *Gnome) Mute() {
 // Stop stops the Gnome.
 func (g *Gnome) Stop() {
 	g.cancelFunc()
+	g.paused.Store(false)
 	g.running.Store(false)
 }
 
@@ -140,6 +142,7 @@ func (g *Gnome) Close() {
 func (g *Gnome) Pause() {
 	if g.running.Load() {
 		g.pauseChan <- true
+		g.paused.Swap(!g.paused.Load()) // toggle
 	}
 	// else we would wedge
 }
@@ -154,6 +157,12 @@ func (g *Gnome) Change(tempo int32) {
 // IsRunning returns if the 'gnome is running.
 func (g *Gnome) IsRunning() bool {
 	return g.running.Load()
+}
+
+// IsPaused returns if the 'gnome is paused.
+// This should not be used for blocking or timing decisions
+func (g *Gnome) IsPaused() bool {
+	return g.paused.Load()
 }
 
 // tick() is what happens every time the timer fires, in a separate goro.

@@ -36,6 +36,7 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 
 		g.Pause()        // Pause
 		oldi := i.Load() // cache i
+		So(g.IsPaused(), ShouldBeTrue)
 		<-time.After(time.Second)
 		SoMsg("Too many post-Pause ticks!", i.Load(), ShouldBeBetweenOrEqual, oldi, oldi+1) // Pause means Pause, with possible slip of 1
 		g.Pause()                                                                           // resume
