@@ -206,7 +206,6 @@ func (g *Gnome) ticker() {
 				case <-g.pauseChan:
 					// Resume!
 					t = time.Now()
-					c = 1
 				}
 			default:
 				// Sleep to Next Target
