@@ -142,11 +142,10 @@ func Test_GnomeDrift(t *testing.T) {
 		its      atomic.Int64
 	)
 
-	Convey("When a 'gnome is left to run at 0.5sec intervals (120BPM) for 10 seconds, the drifts are as follows:", t, func(c C) {
+	Convey("When a 'gnome is left to run at "+fmt.Sprintf("%s intervals (%dBPM)", interval, ToBPM(interval))+" for 10 seconds, the drifts are as follows:", t, func(c C) {
 
 		tick := func(beat int) {
-			its.Add(1)
-			ntime := start.Load().Add(interval * time.Duration(its.Load()))
+			ntime := start.Load().Add(interval * time.Duration(its.Add(1)))
 			c.Printf("Drift: %s\n", time.Since(ntime))
 		}
 
@@ -159,7 +158,8 @@ func Test_GnomeDrift(t *testing.T) {
 
 		start.Store(time.Now())
 		c.Println()
-		g.Start()
+		// g.Start()
+		go g.ticker(tick)
 		<-time.After(10 * time.Second)
 		g.Stop()
 
