@@ -43,6 +43,11 @@ var (
 // Buffer is our local interface to encapsulate all the interfaces
 type Buffer = io.ReadSeekCloser
 
+// TickFunc is a function called during a tick event. The current beat number is passed to it.
+// These functions must absolutely handle being called multiple times in quick succession, handling order,
+// overlaps, and all of that jazz.
+type TickFunc func(int)
+
 // Gnome is a metro...gnome. Get it? Get it?!
 type Gnome struct {
 	// TS tracks and reports the time signature information for the 'gnome.
@@ -56,12 +61,12 @@ type Gnome struct {
 	paused     atomic.Bool
 	mute       atomic.Bool
 	running    atomic.Bool
-	tickFunc   func(int)
+	tickFunc   TickFunc
 }
 
 // NewGnomeFromBuffer takes a Buffer, a TimeSignature and an optional tickFunc to call when
 // the 'gnome fires, and gives you a Gnome or an error. :)
-func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc func(int)) (*Gnome, error) {
+func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc TickFunc) (*Gnome, error) {
 	// Require a ts
 	if ts == nil {
 		return nil, fmt.Errorf("a valid TimeSignature is required")
@@ -92,7 +97,7 @@ func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc func(int)) (*Gn
 
 // NewGnomeFromFile takes a filename, a TimeSignature and an optional tickFunc to call when
 // the 'gnome fires, and gives you a Gnome or an error. :)
-func NewGnomeFromFile(soundFile string, ts *TimeSignature, tickFunc func(int)) (*Gnome, error) {
+func NewGnomeFromFile(soundFile string, ts *TimeSignature, tickFunc TickFunc) (*Gnome, error) {
 	buff, err := FileToBuffer(soundFile)
 	if err != nil {
 		return nil, err
@@ -104,7 +109,7 @@ func NewGnomeFromFile(soundFile string, ts *TimeSignature, tickFunc func(int)) (
 func (g *Gnome) Restart() error {
 	if g.running.CompareAndSwap(false, true) {
 		g.ctx, g.cancelFunc = context.WithCancel(context.Background())
-		go g.ticker()
+		go g.ticker(g.tick, g.tickFunc)
 	} else {
 		// Already running
 		return fmt.Errorf("already running. Stop before restarting")
@@ -115,7 +120,7 @@ func (g *Gnome) Restart() error {
 // Start -s the Gnome. Only works the first time you call it.
 func (g *Gnome) Start() {
 	if g.running.CompareAndSwap(false, true) {
-		go g.ticker()
+		go g.ticker(g.tick, g.tickFunc)
 	} // else already running
 }
 
@@ -165,18 +170,12 @@ func (g *Gnome) IsPaused() bool {
 	return g.paused.Load()
 }
 
-// tick() is what happens every time the timer fires, in a separate goro.
-// This must absolutely be able to be called multiple times, handling order,
-// overlaps, and all of that jazz.
+// tick() is the default TickFunc what happens every time the timer fires.
 func (g *Gnome) tick(beat int) {
 	// Sound!
 	if !g.mute.Load() {
 		g.player.Seek(0)
 		speaker.Play(g.player)
-	}
-
-	if g.tickFunc != nil {
-		g.tickFunc(beat)
 	}
 }
 
@@ -184,7 +183,7 @@ func (g *Gnome) tick(beat int) {
 // time.Ticker and time.After are very very variable. Doing a tight loop with a
 // controlled variable-duration time.Sleep has the least drift I have found. Wow, does Go
 // need a high-precision timer package.
-func (g *Gnome) ticker() {
+func (g *Gnome) ticker(ticks ...TickFunc) {
 	var (
 		t = time.Now()
 		c int
@@ -214,7 +213,14 @@ func (g *Gnome) ticker() {
 				// Sleep
 				time.Sleep(time.Until(t))
 
-				go g.tick(c)
+				// iterate over the ticks.
+				// This is more reliably performant than having
+				// g.tick call tickFunc, oddly enough.
+				for _, tick := range ticks {
+					if tick != nil {
+						tick(c)
+					}
+				}
 
 				c++
 				if c > int(g.TS.Beats.Load()) {

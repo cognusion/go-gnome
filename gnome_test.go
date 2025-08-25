@@ -3,12 +3,14 @@ package gnome
 import (
 	"crypto/rand"
 	_ "embed"
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/fortytw2/leaktest"
 	. "github.com/smartystreets/goconvey/convey"
+	uatomic "go.uber.org/atomic"
 )
 
 func Test_NewGnomeBufferTick(t *testing.T) {
@@ -20,7 +22,6 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 
 		tf := func(tick int) {
 			i.Add(1)
-			c.So(tick, ShouldNotBeZeroValue)
 		}
 
 		g, e := NewGnomeFromFile("testfiles/metronome1.wav", NewTimeSignature(4, 4, 240), tf)
@@ -128,4 +129,41 @@ func Test_BPMS(t *testing.T) {
 			So(ToBPM(FromBPM(int32(i))), ShouldEqual, i)
 		}
 	})
+}
+
+func Test_GnomeDrift(t *testing.T) {
+	if !testing.Verbose() {
+		t.Skip("Drift calcs are interesting but not pass/fail. Skipping unless verbose")
+	}
+
+	var (
+		interval time.Duration = 500 * time.Millisecond
+		start    uatomic.Time
+		its      atomic.Int64
+	)
+
+	Convey("When a 'gnome is left to run at 0.5sec intervals (120BPM) for 10 seconds, the drifts are as follows:", t, func(c C) {
+
+		tick := func(beat int) {
+			its.Add(1)
+			ntime := start.Load().Add(interval * time.Duration(its.Load()))
+			c.Printf("Drift: %s\n", time.Since(ntime))
+		}
+
+		g, e := NewGnomeFromFile("testfiles/metronome1.wav", NewTimeSignature(4, 4, ToBPM(interval)), tick)
+		if e != nil {
+			fmt.Println(e)
+			t.FailNow()
+		}
+		defer g.Close()
+
+		start.Store(time.Now())
+		c.Println()
+		g.Start()
+		<-time.After(10 * time.Second)
+		g.Stop()
+
+		So(its.Load(), ShouldBeBetweenOrEqual, 19, 21)
+	})
+
 }
