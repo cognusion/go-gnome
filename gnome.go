@@ -48,6 +48,9 @@ type Buffer = io.ReadSeekCloser
 // overlaps, and all of that jazz.
 type TickFunc func(int)
 
+// TickFilter is passed the beat count, and returns true if the tick sound should be played
+type TickFilter func(int) bool
+
 // Gnome is a metro...gnome. Get it? Get it?!
 type Gnome struct {
 	// TS tracks and reports the time signature information for the 'gnome.
@@ -61,6 +64,7 @@ type Gnome struct {
 	paused     atomic.Bool
 	mute       atomic.Bool
 	running    atomic.Bool
+	tickFilter atomic.Pointer[TickFilter]
 	tickFunc   TickFunc
 }
 
@@ -91,6 +95,10 @@ func NewGnomeFromBuffer(buff Buffer, ts *TimeSignature, tickFunc TickFunc) (*Gno
 		cancelFunc: cancel,
 	}
 	g.interval.Store(ts.TempoToDuration())
+	tf := TickFilter(func(beat int) bool {
+		return true
+	})
+	g.tickFilter.Store(&tf) // default filter returns true
 
 	return g, nil
 }
@@ -170,10 +178,21 @@ func (g *Gnome) IsPaused() bool {
 	return g.paused.Load()
 }
 
+// SetTickFilter installs a new tickFilter. A tickFilter is passed the beat count and returns true if
+// the sound should be played for that beat
+func (g *Gnome) SetTickFilter(tf TickFilter) error {
+	if tf == nil {
+		return fmt.Errorf("passed TickFilter is nil")
+	}
+	g.tickFilter.Store(&tf)
+	return nil
+}
+
 // tick() is the default TickFunc what happens every time the timer fires.
 func (g *Gnome) tick(beat int) {
 	// Sound!
-	if !g.mute.Load() {
+	tf := *g.tickFilter.Load()
+	if tf(beat) && !g.mute.Load() {
 		g.player.Seek(0)
 		speaker.Play(g.player)
 	}
