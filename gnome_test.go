@@ -49,6 +49,42 @@ func Test_NewGnomeBufferTick(t *testing.T) {
 	})
 }
 
+func Test_ReplaceStream(t *testing.T) {
+	Convey("When a Buffer from FileToBuffer on a known-good wav file is passed to NewGnomeBufferTick, everything works as expected.", t, func(c C) {
+		var i atomic.Int64
+
+		tf := func(tick int) {
+			i.Add(1)
+		}
+
+		g, e := NewGnomeFromFile("testfiles/metronome1.wav", NewTimeSignature(4, 4, 240), tf)
+		So(e, ShouldBeNil)
+		So(g, ShouldNotBeNil)
+		defer g.Close()
+
+		g.Mute() // let's not metronome during a test
+		g.Start()
+
+		Convey("When FileToBuffer is called on a known MP3 file", func() {
+			b, err := FileToBuffer("testfiles/metronome1.mp3")
+			So(err, ShouldBeNil)
+			So(b, ShouldNotBeNil)
+
+			Convey("and we can ReplaceStreamFromBuffer safely, and everything keeps on ticking.", func() {
+				e := g.ReplaceStreamerFromBuffer(b)
+				So(e, ShouldBeNil)
+
+				<-time.After(time.Second)
+				So(g.IsRunning(), ShouldBeTrue)
+				g.Stop()
+				So(g.IsRunning(), ShouldBeFalse)
+				SoMsg("Too many total ticks, given pauses and tempo!", i.Load(), ShouldBeBetweenOrEqual, 2, 5)
+			})
+		})
+
+	})
+}
+
 func Test_BufferToStreamer(t *testing.T) {
 	defer leaktest.Check(t)()
 

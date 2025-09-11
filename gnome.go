@@ -114,6 +114,22 @@ func NewGnomeFromFile(soundFile string, ts *TimeSignature, tickFunc TickFunc) (*
 	return NewGnomeFromBuffer(buff, ts, tickFunc)
 }
 
+// ReplaceStreamerFromBuffer attempts to replace the current steamer with a new one from the provided buffer.
+func (g *Gnome) ReplaceStreamerFromBuffer(buff Buffer) error {
+	if g.player == nil {
+		// Should never happen unless they didn't use a New func.
+		return fmt.Errorf("current streamer not initialized")
+	}
+	streamer, _, err := BufferToStreamer(buff)
+	if err != nil {
+		return err
+	}
+	g.player.Close() // close the old streamer
+
+	g.player = streamer
+	return nil
+}
+
 // Restart will re-initialize some stopped components so the 'gnome can carry on.
 func (g *Gnome) Restart() error {
 	if g.running.CompareAndSwap(false, true) {
@@ -194,6 +210,7 @@ func (g *Gnome) tick(beat int) {
 	// Sound!
 	tf := *g.tickFilter.Load()
 	if tf(beat) && !g.mute.Load() {
+		speaker.Clear()
 		g.player.Seek(0)
 		speaker.Play(g.player)
 	}
