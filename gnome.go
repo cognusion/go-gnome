@@ -24,6 +24,7 @@ import (
 	"github.com/cognusion/go-gnome/speaker"
 	"github.com/cognusion/go-recyclable"
 	"github.com/gopxl/beep/v2"
+	"github.com/gopxl/beep/v2/effects"
 	"github.com/gopxl/beep/v2/mp3"
 	"github.com/gopxl/beep/v2/vorbis"
 	"github.com/gopxl/beep/v2/wav"
@@ -65,6 +66,7 @@ type Gnome struct {
 	paused     atomic.Bool
 	mute       atomic.Bool
 	running    atomic.Bool
+	pan        atomic.Bool
 	tickFilter atomic.Pointer[TickFilter]
 	tickFunc   TickFunc
 }
@@ -154,6 +156,11 @@ func (g *Gnome) Mute() {
 	g.mute.Swap(!g.mute.Load()) // toggle
 }
 
+// Pan toggles whether or not beats will alternate on speakers.
+func (g *Gnome) Pan() {
+	g.pan.Swap(!g.pan.Load())
+}
+
 // Stop stops the Gnome.
 func (g *Gnome) Stop() {
 	g.cancelFunc()
@@ -212,7 +219,19 @@ func (g *Gnome) tick(beat int) {
 	if tf(beat) && !g.mute.Load() {
 		speaker.Clear()
 		g.player.Seek(0)
-		speaker.Play(g.player)
+
+		s := effects.Pan{
+			Streamer: g.player,
+		}
+
+		if g.pan.Load() {
+			if beat%2 == 0 {
+				s.Pan = 1.0
+			} else {
+				s.Pan = -1.0
+			}
+		}
+		speaker.Play(&s)
 	}
 }
 
