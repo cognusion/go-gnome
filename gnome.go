@@ -8,7 +8,7 @@
 // On a normal system, doing nothing else, BPMs under 180 are almost always great.
 //
 // Gnome was built from scratch expecting WASM as the target platform. Some decisions that may seem odd
-// were made because of that. Most odd decisions are simply. The consuming app was written for my
+// were made because of that. Most odd decisions are simply odd. The consuming app was written for my
 // brother-in-law's music students: [MetroGnome](https://github.com/cognusion/metrognome).
 package gnome
 
@@ -21,14 +21,15 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cognusion/go-gnome/speaker"
 	"github.com/cognusion/go-recyclable"
 	"github.com/gopxl/beep/v2"
 	"github.com/gopxl/beep/v2/mp3"
-	"github.com/gopxl/beep/v2/speaker"
 	"github.com/gopxl/beep/v2/vorbis"
 	"github.com/gopxl/beep/v2/wav"
 	"github.com/h2non/filetype"
 	uatomic "go.uber.org/atomic"
+	//"github.com/gopxl/beep/v2/speaker" This stays commented out, to remind us we customized speaker
 )
 
 const (
