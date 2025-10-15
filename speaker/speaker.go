@@ -90,7 +90,6 @@ func Init(sampleRate beep.SampleRate, bufferSize int) error {
 // in properly set systems, the default mixer handles multiple concurrent processes.
 func Close() {
 	if player != nil {
-		player.Close()
 		player = nil
 		Clear()
 	}
