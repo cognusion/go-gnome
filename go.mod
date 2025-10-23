@@ -3,7 +3,7 @@ module github.com/cognusion/go-gnome
 go 1.25.0
 
 require (
-	github.com/cognusion/go-recyclable v1.3.0
+	github.com/cognusion/go-recyclable/v2 v2.0.0
 	github.com/ebitengine/oto/v3 v3.4.0
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/gopxl/beep/v2 v2.1.1

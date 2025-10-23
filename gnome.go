@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/cognusion/go-gnome/speaker"
-	"github.com/cognusion/go-recyclable"
+	"github.com/cognusion/go-recyclable/v2"
 	"github.com/gopxl/beep/v2"
 	"github.com/gopxl/beep/v2/effects"
 	"github.com/gopxl/beep/v2/mp3"
