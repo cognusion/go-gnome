@@ -12,6 +12,7 @@ package speaker
 
 import (
 	"cmp"
+	"fmt"
 	"io"
 	"sync"
 	"time"
@@ -203,8 +204,8 @@ func (s *sampleReader) Read(buf []byte) (n int, err error) {
 			val := s.buf[i][c]
 			val = clamp(val, -1, 1)
 			valInt16 := int16(val * (1<<15 - 1))
-			low := byte(valInt16)
-			high := byte(valInt16 >> 8)
+			low, _ := int16ToByte(valInt16)
+			high, _ := int16ToByte(valInt16 >> 8)
 			buf[i*bytesPerSample+c*bitDepthInBytes+0] = low
 			buf[i*bytesPerSample+c*bitDepthInBytes+1] = high
 		}
@@ -219,4 +220,12 @@ func (s *sampleReader) stream(samples [][2]float64) (n int, ok bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	return s.s.Stream(samples)
+}
+
+// int16ToByte is used to safely convert from an int16 to a byte, returning an error of i does not fit.
+func int16ToByte(i int16) (byte, error) {
+	if i < 0 || i > 255 {
+		return 0, fmt.Errorf("value %d out of range for a byte (0-255)", i)
+	}
+	return byte(i), nil
 }
