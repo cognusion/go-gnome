@@ -3,7 +3,7 @@ module github.com/cognusion/go-gnome
 go 1.25.0
 
 require (
-	github.com/cognusion/go-recyclable/v2 v2.0.0
+	github.com/cognusion/go-recyclable/v2 v2.0.1
 	github.com/ebitengine/oto/v3 v3.4.0
 	github.com/fortytw2/leaktest v1.3.0
 	github.com/gopxl/beep/v2 v2.1.1
@@ -15,12 +15,12 @@ require (
 )
 
 require (
-	github.com/ebitengine/purego v0.9.0 // indirect
+	github.com/ebitengine/purego v0.9.1 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/jfreymuth/oggvorbis v1.0.5 // indirect
 	github.com/jfreymuth/vorbis v1.0.2 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
 )
